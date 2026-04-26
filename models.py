@@ -87,7 +87,8 @@ class AffineCoupling(nn.Module):
 
 
 class NormalizingFlow(nn.Module):
-    """ Minimal Real NVP architecture
+    """ 
+    Minimal Real NVP architecture
     Args:
         dims (int,): input dimension
         n_blocks (int): number of pairs of coupling layers
@@ -222,8 +223,8 @@ class MoG():
         self.normal_distribs = []
         for c in range(self.k):
             c_distrib = td.multivariate_normal.MultivariateNormal(
-                self.means[c].to(device),
-                covariance_matrix=self.covars[c].to(device)
+                self.means[c].float().to(device),
+                covariance_matrix=self.covars[c].float().to(device)
                 )
             self.normal_distribs.append(c_distrib)
 
@@ -231,12 +232,12 @@ class MoG():
         self.dets = torch.stack([torch.det(cv) for cv in covars])
 
     def sample(self, n):
-        cs = self.cs_distrib.sample_n(n).to(self.device)
+        cs = self.cs_distrib.sample((n,)).to(self.device)
 
         samples = torch.zeros((n, self.dim), device=self.device)
         for c in range(self.k):
             n_c = (cs == c).sum()
-            samples[cs == c, :] = self.normal_distribs[c].sample_n(n_c)
+            samples[cs == c, :] = self.normal_distribs[c].sample((n_c,))
         return samples.to(self.device)
 
     def log_prob(self, x):

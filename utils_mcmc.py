@@ -55,3 +55,46 @@ def run_mala(target_U, grad_U, x_init, n_steps, dt, beta_eff=1, with_tqdm=False)
         x_init = x.clone().detach()
 
     return torch.stack(xs), torch.stack(accs)
+
+def run_mcmc(x_init, proposal, target, n_steps, with_tqdm=False):
+    """
+    Independent Metropolis-Hastings using `proposal` as an independence proposal.
+    Works for a single chain `(dim,)` or batched chains `(n_chains, dim)`.
+    """
+
+    single_chain = x_init.dim() == 1
+    
+    if single_chain:
+        x_init = x_init.unsqueeze(0)
+
+    n_chains, dim = x_init.shape
+    samples = torch.zeros(
+        (n_steps + 1, n_chains, dim), dtype=x_init.dtype, device=x_init.device
+    )
+    samples[0] = x_init.clone()
+
+    range_ = tqdm.tqdm(range(1, n_steps + 1)) if with_tqdm else range(1, n_steps + 1)
+    for i in range_:
+        x_prev = samples[i - 1]
+        try:
+            candidate = proposal.sample(n_chains)
+        except TypeError:
+            candidate = proposal.sample((n_chains,))
+        if candidate.dim() == 1:
+            candidate = candidate.unsqueeze(0)
+
+        log_diff_target = target.log_prob(candidate) - target.log_prob(x_prev)
+        log_diff_prop = proposal.log_prob(x_prev) - proposal.log_prob(candidate)
+        log_accept_ratio = log_diff_target + log_diff_prop
+
+        log_u = torch.log(torch.rand_like(log_accept_ratio))
+        acc = log_u < log_accept_ratio
+
+        x_new = x_prev.clone()
+        x_new[acc] = candidate[acc]
+        samples[i] = x_new
+
+    samples = samples[1:]
+    if single_chain:
+        return samples.squeeze(1)
+    return samples
