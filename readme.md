@@ -29,16 +29,16 @@ The notebook is organized in five main parts:
 
 3. **Training the flow**  
 	Uses an empirical KL objective,
-	$$
-	\mathcal{L}(\theta) \approx \frac{1}{B}\sum_{k=1}^B \left[\log \rho_\theta(x^k)-\log \rho_*(x^k)\right],\quad x^k\sim \rho_\theta,
-	$$
+	```math
+	\mathcal{L}(\theta) \approx \frac{1}{B}\sum_{k=1}^B \left[\log \rho_\theta(x^k)-\log \rho_*(x^k)\right],\quad x^k\sim \rho_\theta
+	```
 	and monitors convergence through loss and density plots.
 
 4. **Importance sampling with the trained flow**  
 	Computes importance weights,
-	$$
-	w_i = \frac{\rho_*(x_i)}{\rho_\theta(x_i)},
-	$$
+	```math
+	w_i = \frac{\rho_*(x_i)}{\rho_\theta(x_i)}
+	```
 	and uses normalized weights to estimate target-region probabilities and discuss when IS can fail.
 
 5. **Flow-based MCMC proposal**  
